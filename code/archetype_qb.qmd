@@ -3,3 +3,229 @@ title: "Untitled"
 format: html
 ---
 
+Importing necessary libraries
+```{python}
+import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
+import seaborn as sns
+```
+
+Loading in files
+```{python}
+passing_data = pd.read_csv("/Users/shubhantamhane/nfl-qb-archetypes/data/2019-2025_passing.csv")
+
+rushing_data = pd.read_csv("/Users/shubhantamhane/nfl-qb-archetypes/data/2024-2019_Rushing.csv")
+```
+
+
+
+```{python}
+passing_qbs = passing_data[passing_data['Pos'] == "QB"].copy()
+
+passing_qbs.columns = (
+    passing_qbs.columns.str.strip().str.lower().str.replace(" ", "_")
+)
+rushing_data.columns = (
+    rushing_data.columns.str.strip().str.lower().str.replace(" ", "_")
+)
+
+# merged = passing_qbs.merge(
+#     rushing_data, 
+#     on=['player', 'year'], 
+#     how="outer"
+# )
+
+# len(merged)
+```
+
+Some players were traded mid season and played for multiple teams
+```{python}
+print(passing_qbs.groupby(['player', 'year']).size().sort_values(ascending=False).head(10))
+
+rushing_data.groupby(['player', 'year']).size().sort_values(ascending=False).head(10)
+
+```
+
+```{python}
+rushing_data.columns = rushing_data.columns.str.lower()
+passing_qbs.columns = passing_qbs.columns.str.lower()
+def keep_totals(df):
+    return df[df['team'].str.contains('TM', na=False)].copy()
+passing_total = keep_totals(passing_qbs)
+rushing_total = keep_totals(rushing_data)
+
+def keep_best_row(df):
+    totals = df[df['team'].str.contains('TM', na=False)].copy()
+    
+    singles = df.groupby(['player', 'year']).filter(lambda x: len(x) == 1)
+    
+    return pd.concat([totals, singles]).drop_duplicates(subset=['player', 'year'])
+
+passing_clean = keep_best_row(passing_qbs)
+rushing_clean = keep_best_row(rushing_data)
+
+
+```
+
+Final merged data
+```{python}
+merged = passing_clean.merge(
+    rushing_clean,
+    on=['player', 'year'],
+    how='outer',
+    suffixes=('_pass', '_rush')
+)
+len(merged)
+```
+
+Players with passing yards and no rushing yards
+```{python}
+missing_rushing = merged[merged.filter(like='_rush').isna().all(axis=1)]
+missing_rushing[['player', 'year']]
+
+```
+
+Players with rushing yards and no passing yards 
+```{python}
+missing_passing = merged[merged.filter(like='_pass').isna().all(axis=1)]
+missing_passing[['player', 'year']]
+```
+
+Minimum 100 pass attempts and 20 rush attempts
+```{python}
+passing_filtered = passing_clean[passing_clean['att'] >= 100].copy()
+
+rushing_filtered = rushing_clean[rushing_clean['att'] >= 20].copy()
+
+data = passing_filtered.merge(
+    rushing_filtered,
+    on=['player', 'year'],
+    how='inner',
+    suffixes=('_pass', '_rush')
+)
+```
+
+```{python}
+len(data)
+```
+
+```{python}
+data.to_csv("final_data.csv")
+```
+
+```{python}
+data.isna().sum()
+```
+
+QBR is shown to be approximately normal/symmetric, so imputation for missing values should be the mean
+```{python}
+df = data.dropna(subset=['qbr'])
+
+plt.hist(df['qbr'])
+plt.xlabel("QBR")
+plt.ylabel("Count")
+plt.title("QBR Distribution")
+plt.show()
+```
+
+Imputing missing QBR values and dropping unnecessary columns 
+```{python}
+data['qbr'] = data['qbr'].fillna(data['qbr'].mean())
+data = data.drop(columns=["awards_rush", "player-additional_rush", 'pos_rush', 'pos_pass'])
+data.isna().sum()
+```
+
+Longest Rush is shown to be skewed to the right, so imputation for missing value should be median. 
+```{python}
+df = data.dropna(subset=['lng_rush'])
+
+plt.hist(df['lng_rush'])
+plt.xlabel("Longest Rush")
+plt.ylabel("Count")
+plt.title("Longest Rush Distribution")
+plt.show()
+```
+
+Imputing missing longest rush value
+```{python}
+data['lng_rush'] = data['lng_rush'].fillna(data['lng_rush'].mean())
+```
+
+```{python}
+data.info()
+```
+
+```{python}
+data.describe().T
+```
+
+```{python}
+plt.figure(figsize=(40, 32))
+sns.heatmap(
+    data.corr(numeric_only=True),
+    annot=True,
+    fmt=".2f",
+    cmap='coolwarm',
+    annot_kws={"size": 8}
+)
+plt.title("Correlation Heatmap", fontsize=22)
+plt.xticks(fontsize=10, rotation=90)
+plt.yticks(fontsize=10)
+plt.tight_layout()
+plt.show()
+```
+
+```{python}
+data.hist(figsize=(16,12), bins = 20)
+plt.tight_layout()
+plt.show()
+```
+
+```{python}
+for col in data.columns:
+    plt.figure(figsize=(6,2))
+    sns.boxplot(x=data[col])
+    plt.title(col)
+    plt.show()
+
+```
+
+```{python}
+data.var(numeric_only=True).sort_values(ascending=False)
+```
+
+```{python}
+from sklearn.preprocessing import StandardScaler
+scaler = StandardScaler()
+
+numeric_data = data.select_dtypes(include=['float64', 'int64'])
+
+numeric_data = numeric_data.drop(columns=['year'])
+X_scaled = scaler.fit_transform(numeric_data)
+
+
+```
+
+
+```{python}
+from sklearn.decomposition import PCA
+
+pca = PCA(n_components=None)
+X_pca = pca.fit_transform(X_scaled)
+```
+
+```{python}
+plt.figure(figsize=(10,6))
+plt.plot(range(1, len(pca.explained_variance_ratio_)+1),
+         pca.explained_variance_ratio_.cumsum(),
+         marker='o')
+plt.axhline(y=0.9, color='r', linestyle='--')
+plt.xlabel("Number of Principal Components")
+plt.ylabel("Cumulative Explained Variance")
+plt.title("PCA Explained Variance")
+plt.show()
+
+
+```
+
