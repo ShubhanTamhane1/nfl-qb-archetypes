@@ -4,7 +4,8 @@ format: html
 ---
 
 Importing necessary libraries
-```{python}
+```{python #| include: false}
+#| include: false
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
@@ -13,6 +14,7 @@ import seaborn as sns
 
 Loading in files
 ```{python}
+#| include: false
 passing_data = pd.read_csv("/Users/shubhantamhane/nfl-qb-archetypes/data/2019-2025_passing.csv")
 
 rushing_data = pd.read_csv("/Users/shubhantamhane/nfl-qb-archetypes/data/2024-2019_Rushing.csv")
@@ -21,6 +23,9 @@ rushing_data = pd.read_csv("/Users/shubhantamhane/nfl-qb-archetypes/data/2024-20
 
 
 ```{python}
+#| echo: true
+#| message: false
+#| warning: false
 passing_qbs = passing_data[passing_data['Pos'] == "QB"].copy()
 
 passing_qbs.columns = (
@@ -41,6 +46,9 @@ rushing_data.columns = (
 
 Some players were traded mid season and played for multiple teams
 ```{python}
+#| echo: true
+#| message: false
+#| warning: false
 print(passing_qbs.groupby(['player', 'year']).size().sort_values(ascending=False).head(10))
 
 rushing_data.groupby(['player', 'year']).size().sort_values(ascending=False).head(10)
@@ -48,6 +56,9 @@ rushing_data.groupby(['player', 'year']).size().sort_values(ascending=False).hea
 ```
 
 ```{python}
+#| echo: true
+#| message: false
+#| warning: false
 rushing_data.columns = rushing_data.columns.str.lower()
 passing_qbs.columns = passing_qbs.columns.str.lower()
 def keep_totals(df):
@@ -70,6 +81,9 @@ rushing_clean = keep_best_row(rushing_data)
 
 Final merged data
 ```{python}
+#| echo: true
+#| message: false
+#| warning: false
 merged = passing_clean.merge(
     rushing_clean,
     on=['player', 'year'],
@@ -81,6 +95,9 @@ len(merged)
 
 Players with passing yards and no rushing yards
 ```{python}
+#| echo: true
+#| message: false
+#| warning: false
 missing_rushing = merged[merged.filter(like='_rush').isna().all(axis=1)]
 missing_rushing[['player', 'year']]
 
@@ -88,12 +105,18 @@ missing_rushing[['player', 'year']]
 
 Players with rushing yards and no passing yards 
 ```{python}
+#| echo: true
+#| message: false
+#| warning: false
 missing_passing = merged[merged.filter(like='_pass').isna().all(axis=1)]
 missing_passing[['player', 'year']]
 ```
 
 Minimum 100 pass attempts and 20 rush attempts
 ```{python}
+#| echo: true
+#| message: false
+#| warning: false
 passing_filtered = passing_clean[passing_clean['att'] >= 100].copy()
 
 rushing_filtered = rushing_clean[rushing_clean['att'] >= 20].copy()
@@ -107,19 +130,25 @@ data = passing_filtered.merge(
 ```
 
 ```{python}
+#| include: false
 len(data)
 ```
 
 ```{python}
+#| include: false
 data.to_csv("final_data.csv")
 ```
 
 ```{python}
+#| include: false
 data.isna().sum()
 ```
 
 QBR is shown to be approximately normal/symmetric, so imputation for missing values should be the mean
 ```{python}
+#| echo: true
+#| message: false
+#| warning: false
 df = data.dropna(subset=['qbr'])
 
 plt.hist(df['qbr'])
@@ -131,6 +160,9 @@ plt.show()
 
 Imputing missing QBR values and dropping unnecessary columns 
 ```{python}
+#| echo: true
+#| message: false
+#| warning: false
 data['qbr'] = data['qbr'].fillna(data['qbr'].mean())
 data = data.drop(columns=["awards_rush", "player-additional_rush", 'pos_rush', 'pos_pass'])
 data.isna().sum()
@@ -138,6 +170,9 @@ data.isna().sum()
 
 Longest Rush is shown to be skewed to the right, so imputation for missing value should be median. 
 ```{python}
+#| echo: true
+#| message: false
+#| warning: false
 df = data.dropna(subset=['lng_rush'])
 
 plt.hist(df['lng_rush'])
@@ -149,18 +184,34 @@ plt.show()
 
 Imputing missing longest rush value
 ```{python}
+#| echo: true
+#| message: false
+#| warning: false
 data['lng_rush'] = data['lng_rush'].fillna(data['lng_rush'].mean())
 ```
 
 ```{python}
+# data['rush_attempt_pct'] = data['att_rush'] / (data['att_rush'] + data['att_pass'])
+# data['td_per_attempt_pass'] = data['td_pass'] / data['att_pass']
+# data['int_per_attempt'] = data['int'] / data['att_pass']  # FIX: was td_pass
+# data['yards_per_rush'] = data['yds_rush'] / data['att_rush']
+# data['td_rush_ratio'] = data['td_rush'] / (data['td_rush'] + data['td_pass'])
+
+# data['td_rush_ratio'] = data['td_rush_ratio'].fillna(data['td_rush_ratio'].mean())
+```
+
+```{python}
+#| include: false
 data.info()
 ```
 
 ```{python}
+#| include: false
 data.describe().T
 ```
 
 ```{python}
+#| echo: false
 plt.figure(figsize=(40, 32))
 sns.heatmap(
     data.corr(numeric_only=True),
@@ -177,12 +228,14 @@ plt.show()
 ```
 
 ```{python}
+#| echo: false
 data.hist(figsize=(16,12), bins = 20)
 plt.tight_layout()
 plt.show()
 ```
 
 ```{python}
+#| echo: false
 for col in data.columns:
     plt.figure(figsize=(6,2))
     sns.boxplot(x=data[col])
@@ -192,10 +245,16 @@ for col in data.columns:
 ```
 
 ```{python}
+#| echo: true
+#| message: false
+#| warning: false
 data.var(numeric_only=True).sort_values(ascending=False)
 ```
 
 ```{python}
+#| echo: true
+#| message: false
+#| warning: false
 from sklearn.preprocessing import StandardScaler
 scaler = StandardScaler()
 
@@ -207,8 +266,142 @@ X_scaled = scaler.fit_transform(numeric_data)
 
 ```
 
+Trying new features with rates/
+
+<!-- ```{python}
+# Create rate-based features (fixing the int_per_attempt bug on line 3)
+rate_features = pd.DataFrame()
+rate_features['rush_attempt_pct'] = numeric_data['att_rush'] / (numeric_data['att_rush'] + numeric_data['att_pass'])
+rate_features['td_per_attempt_pass'] = numeric_data['td_pass'] / numeric_data['att_pass']
+rate_features['int_per_attempt'] = numeric_data['int'] / numeric_data['att_pass']  # FIX: was td_pass
+rate_features['yards_per_rush'] = numeric_data['yds_rush'] / numeric_data['att_rush']
+rate_features['td_rush_ratio'] = numeric_data['td_rush'] / (numeric_data['td_rush'] + numeric_data['td_pass'])
+
+# Add a few more useful features
+rate_features['yards_per_pass_attempt'] = numeric_data['yds_pass'] / numeric_data['att_pass']
+rate_features['sack_rate'] = numeric_data['sk'] / numeric_data['att_pass']
+rate_features['completion_pct'] = numeric_data['cmp'] / numeric_data['att_pass']
+rate_features['qbr'] = numeric_data['qbr']  Already a rate/score
+rate_features['passer_rating'] = numeric_data['rate']  # Already a rate
+
+# Standardize the features
+from sklearn.preprocessing import StandardScaler
+scaler = StandardScaler()
+X_scaled = scaler.fit_transform(rate_features)
+
+# Cluster DIRECTLY on scaled features (no PCA needed with rates)
+inertias = []
+sil_scores = []
+K_range = range(2, 11)
+
+for k in K_range:
+    km = KMeans(n_clusters=k, random_state=42, n_init=10)
+    labels = km.fit_predict(X_scaled)
+    inertias.append(km.inertia_)
+    sil_scores.append(silhouette_score(X_scaled, labels))
+
+# Elbow plot
+plt.figure(figsize=(8,5))
+plt.plot(K_range, inertias, marker='o')
+plt.xlabel("Number of clusters (k)")
+plt.ylabel("Inertia (within-cluster SSE)")
+plt.title("Elbow Method - Rate Features")
+plt.xticks(K_range)
+plt.show()
+
+# Silhouette plot
+plt.figure(figsize=(8,5))
+plt.plot(K_range, sil_scores, marker='o')
+plt.xlabel("Number of clusters (k)")
+plt.ylabel("Silhouette score")
+plt.title("Silhouette Score - Rate Features")
+plt.xticks(K_range)
+plt.show()
+
+print("Silhouette scores:", list(zip(K_range, sil_scores)))
+``` -->
+
+<!-- ```{python}
+# Drop the single row with NaN
+rate_features_clean = rate_features.dropna()
+
+print(f"Rows remaining: {len(rate_features_clean)} out of {len(rate_features)}")
+
+# Standardize and cluster
+from sklearn.preprocessing import StandardScaler
+from sklearn.metrics import silhouette_score
+
+scaler = StandardScaler()
+X_scaled = scaler.fit_transform(rate_features_clean)
+
+# Cluster directly on scaled features
+inertias = []
+sil_scores = []
+K_range = range(2, 11)
+
+for k in K_range:
+    km = KMeans(n_clusters=k, random_state=42, n_init=10)
+    labels = km.fit_predict(X_scaled)
+    inertias.append(km.inertia_)
+    sil_scores.append(silhouette_score(X_scaled, labels))
+
+# Elbow plot
+plt.figure(figsize=(8,5))
+plt.plot(K_range, inertias, marker='o')
+plt.xlabel("Number of clusters (k)")
+plt.ylabel("Inertia (within-cluster SSE)")
+plt.title("Elbow Method - Rate Features")
+plt.xticks(K_range)
+plt.show()
+
+# Silhouette plot
+plt.figure(figsize=(8,5))
+plt.plot(K_range, sil_scores, marker='o')
+plt.xlabel("Number of clusters (k)")
+plt.ylabel("Silhouette score")
+plt.title("Silhouette Score - Rate Features")
+plt.xticks(K_range)
+plt.show()
+
+print("Silhouette scores:", list(zip(K_range, sil_scores)))
+``` -->
 
 ```{python}
+
+```
+
+```{python}
+# try_data = numeric_data['rush_attempt_pct'], numeric_data['td_per_attempt_pass'], numeric_data['int_per_attempt'], numeric_data['yards_per_rush'], numeric_data['td_rush_ratio'], numeric_data['']
+```
+
+
+```{python}
+# X_scaled_try = scaler.fit_transform(try_data)
+
+# X_clustered_try = X_scaled_try[:, :10]
+
+# inertias = []
+K_range = range(2, 11)
+
+# for k in K_range:
+#     km = KMeans(n_clusters=k, random_state=42, n_init=10)
+#     km.fit(X_clustered_try)
+#     inertias.append(km.inertia_)
+
+# plt.figure(figsize=(8,5))
+# plt.plot(K_range, inertias, marker='o')
+# plt.xlabel("Number of clusters (k)")
+# plt.ylabel("Inertia (within-cluster SSE)")
+# plt.title("Elbow Method")
+# plt.xticks(K_range)
+# plt.show()
+```
+
+
+```{python}
+#| echo: true
+#| message: false
+#| warning: false
 from sklearn.decomposition import PCA
 
 pca = PCA(n_components=None)
@@ -216,6 +409,7 @@ X_pca = pca.fit_transform(X_scaled)
 ```
 
 ```{python}
+#| echo: false
 plt.figure(figsize=(10,6))
 plt.plot(range(1, len(pca.explained_variance_ratio_)+1),
          pca.explained_variance_ratio_.cumsum(),
@@ -226,6 +420,237 @@ plt.ylabel("Cumulative Explained Variance")
 plt.title("PCA Explained Variance")
 plt.show()
 
+```
 
+
+```{python}
+#| echo: false
+X_clustered = X_pca[:, :10]
+
+from sklearn.cluster import KMeans
+
+
+
+```
+
+```{python}
+#| echo: false
+from sklearn.metrics import silhouette_score
+
+sil_scores = []
+
+for k in K_range:
+    km = KMeans(n_clusters=k, random_state=42, n_init=10)
+    labels = km.fit_predict(X_clustered)
+    score = silhouette_score(X_clustered, labels)
+    sil_scores.append(score)
+
+plt.figure(figsize=(8,5))
+plt.plot(K_range, sil_scores, marker='o')
+plt.xlabel("Number of clusters (k)")
+plt.ylabel("Silhouette score")
+plt.title("Silhouette Score vs k")
+plt.xticks(K_range)
+plt.show()
+
+list(zip(K_range, sil_scores))
+
+```
+
+```{python}
+#| echo: true
+#| message: false
+#| warning: false
+from sklearn.cluster import KMeans
+
+k = 4
+kmeans_4 = KMeans(n_clusters=k, random_state=42, n_init=10)
+cluster_labels_4 = kmeans_4.fit_predict(X_clustered)
+
+
+data["cluster"] = cluster_labels_4
+
+cluster_summary = data.groupby("cluster").mean(numeric_only=True)
+cluster_summary[["att_pass", "yds_pass", "td_pass", "int", "rate", 
+                 "qbr", "att_rush", "yds_rush", "td_rush", "sk"]]
+
+```
+
+```{python}
+#| echo: true
+#| message: false
+#| warning: false
+cluster_to_name = {
+    0: "Pocket passer",
+    1: "Game manager",
+    2: "Gunslinger",
+    3: "Dual threat"
+}
+
+data["archetype"] = data["cluster"].map(cluster_to_name)
+
+data[["player", "year", "cluster", "archetype"]].sample(20)
+```
+
+
+
+PCA scatterplot
+```{python}
+plt.figure(figsize=(10, 7))
+scatter = plt.scatter(X_pca[:, 0], X_pca[:, 1], 
+                     c=cluster_labels_4, 
+                     cmap='viridis', 
+                     alpha=0.6, 
+                     s=50,
+                     edgecolors='black',
+                     linewidth=0.5)
+
+plt.xlabel(f'PC1 ({pca.explained_variance_ratio_[0]:.1%} variance)', fontsize=12)
+plt.ylabel(f'PC2 ({pca.explained_variance_ratio_[1]:.1%} variance)', fontsize=12)
+plt.title('Quarterback Clusters in PCA Space', fontsize=14)
+
+# Add legend with archetype names
+legend_labels = ['Pocket Passer', 'Game Manager', 'Gunslinger', 'Dual Threat']
+plt.legend(handles=scatter.legend_elements()[0], labels=legend_labels, title="Archetype")
+plt.grid(alpha=0.3)
+plt.show()
+```
+
+Spider chart
+```{python}
+from math import pi
+
+# Select key metrics to compare
+metrics = ['att_pass', 'td_pass', 'int', 'rate', 'qbr', 'att_rush', 'yds_rush', 'td_rush']
+
+# Get cluster means and normalize to 0-1 scale for visualization
+cluster_means = data.groupby("cluster")[metrics].mean()
+cluster_normalized = (cluster_means - cluster_means.min()) / (cluster_means.max() - cluster_means.min())
+
+# Create radar chart
+fig, axes = plt.subplots(2, 2, figsize=(14, 14), subplot_kw=dict(projection='polar'))
+axes = axes.flatten()
+
+angles = [n / len(metrics) * 2 * pi for n in range(len(metrics))]
+angles += angles[:1]  # Complete the circle
+
+archetype_names = ['Pocket Passer', 'Game Manager', 'Gunslinger', 'Dual Threat']
+colors = ['#1f77b4', '#ff7f0e', '#2ca02c', '#d62728']
+
+for idx, (cluster_id, ax) in enumerate(zip(range(4), axes)):
+    values = cluster_normalized.iloc[cluster_id].tolist()
+    values += values[:1]  # Complete the circle
+    
+    ax.plot(angles, values, 'o-', linewidth=2, color=colors[idx], label=archetype_names[idx])
+    ax.fill(angles, values, alpha=0.25, color=colors[idx])
+    ax.set_xticks(angles[:-1])
+    ax.set_xticklabels(metrics, size=10)
+    ax.set_ylim(0, 1)
+    ax.set_title(archetype_names[idx], size=14, weight='bold', pad=20)
+    ax.grid(True)
+
+plt.tight_layout()
+plt.show()
+```
+
+```{python}
+fig, axes = plt.subplots(2, 3, figsize=(15, 10))
+axes = axes.flatten()
+
+key_metrics = ['qbr', 'rate', 'td_pass', 'int', 'yds_rush', 'att_rush']
+archetype_order = ['Pocket passer', 'Game manager', 'Gunslinger', 'Dual threat']
+
+for idx, metric in enumerate(key_metrics):
+    sns.boxplot(data=data, x='archetype', y=metric, order=archetype_order, 
+                palette='Set2', ax=axes[idx])
+    axes[idx].set_title(f'{metric.upper()} by Archetype', fontsize=12, weight='bold')
+    axes[idx].set_xlabel('')
+    axes[idx].tick_params(axis='x', rotation=45)
+
+plt.tight_layout()
+plt.show()
+```
+
+Cluster Sizes 
+```{python}
+plt.figure(figsize=(8, 5))
+archetype_counts = data['archetype'].value_counts()
+plt.bar(archetype_counts.index, archetype_counts.values, color=['#1f77b4', '#2ca02c', '#d62728', '#ff7f0e'])
+plt.xlabel('Archetype', fontsize=12)
+plt.ylabel('Count', fontsize=12)
+plt.title('Distribution of QBs Across Archetypes', fontsize=14)
+plt.xticks(rotation=45)
+plt.grid(axis='y', alpha=0.3)
+plt.show()
+```
+
+ANOVA tests
+```{python}
+from scipy import stats
+from scipy.stats import f_oneway
+import pandas as pd
+
+# Select key metrics to test
+test_metrics = ['qbr', 'rate', 'td_pass', 'int', 'yds_rush', 'att_rush', 
+                'yds_pass', 'att_pass', 'td_rush', 'cmp']
+
+# Run ANOVA for each metric
+anova_results = []
+
+for metric in test_metrics:
+    # Split data by archetype
+    pocket = data[data['archetype'] == 'Pocket passer'][metric].dropna()
+    manager = data[data['archetype'] == 'Game manager'][metric].dropna()
+    gunslinger = data[data['archetype'] == 'Gunslinger'][metric].dropna()
+    dual = data[data['archetype'] == 'Dual threat'][metric].dropna()
+    
+    # Run one-way ANOVA
+    f_stat, p_value = f_oneway(pocket, manager, gunslinger, dual)
+    
+    anova_results.append({
+        'Metric': metric,
+        'F-statistic': f_stat,
+        'p-value': p_value,
+        'Significant': 'Yes' if p_value < 0.05 else 'No'
+    })
+
+# Create results dataframe
+anova_df = pd.DataFrame(anova_results)
+print("ANOVA Results:")
+print(anova_df.to_string(index=False))
+print(f"\n{anova_df['Significant'].value_counts()['Yes']} out of {len(test_metrics)} metrics are statistically significant (p < 0.05)")
+```
+
+Tukey HSD test
+```{python}
+from scipy.stats import tukey_hsd
+
+# For metrics with significant ANOVA, run Tukey HSD
+significant_metrics = anova_df[anova_df['Significant'] == 'Yes']['Metric'].tolist()
+
+print("\n=== POST-HOC TUKEY HSD TESTS ===")
+print("(Only for metrics with significant ANOVA)\n")
+
+for metric in significant_metrics[:3]:  # Show first 3 as example
+    print(f"\n{metric.upper()}:")
+    
+    # Get data for each group
+    pocket = data[data['archetype'] == 'Pocket passer'][metric].dropna()
+    manager = data[data['archetype'] == 'Game manager'][metric].dropna()
+    gunslinger = data[data['archetype'] == 'Gunslinger'][metric].dropna()
+    dual = data[data['archetype'] == 'Dual threat'][metric].dropna()
+    
+    # Run Tukey HSD
+    res = tukey_hsd(pocket, manager, gunslinger, dual)
+    
+    # Create pairwise comparison labels
+    groups = ['Pocket passer', 'Game manager', 'Gunslinger', 'Dual threat']
+    
+    print("Pairwise comparisons (p-values):")
+    for i in range(len(groups)):
+        for j in range(i+1, len(groups)):
+            p_val = res.pvalue[i, j]
+            sig = "***" if p_val < 0.001 else "**" if p_val < 0.01 else "*" if p_val < 0.05 else "ns"
+            print(f"  {groups[i]} vs {groups[j]}: p={p_val:.4f} {sig}")
 ```
 
