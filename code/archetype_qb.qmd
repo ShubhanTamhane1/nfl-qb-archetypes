@@ -203,15 +203,6 @@ Imputing missing longest rush value
 data['lng_rush'] = data['lng_rush'].fillna(data['lng_rush'].mean())
 ```
 
-```{python}
-# data['rush_attempt_pct'] = data['att_rush'] / (data['att_rush'] + data['att_pass'])
-# data['td_per_attempt_pass'] = data['td_pass'] / data['att_pass']
-# data['int_per_attempt'] = data['int'] / data['att_pass']  # FIX: was td_pass
-# data['yards_per_rush'] = data['yds_rush'] / data['att_rush']
-# data['td_rush_ratio'] = data['td_rush'] / (data['td_rush'] + data['td_pass'])
-
-# data['td_rush_ratio'] = data['td_rush_ratio'].fillna(data['td_rush_ratio'].mean())
-```
 
 ```{python}
 #| include: false
@@ -279,135 +270,11 @@ X_scaled = scaler.fit_transform(numeric_data)
 
 ```
 
-Trying new features with rates/
 
-<!-- ```{python}
-# Create rate-based features (fixing the int_per_attempt bug on line 3)
-rate_features = pd.DataFrame()
-rate_features['rush_attempt_pct'] = numeric_data['att_rush'] / (numeric_data['att_rush'] + numeric_data['att_pass'])
-rate_features['td_per_attempt_pass'] = numeric_data['td_pass'] / numeric_data['att_pass']
-rate_features['int_per_attempt'] = numeric_data['int'] / numeric_data['att_pass']  # FIX: was td_pass
-rate_features['yards_per_rush'] = numeric_data['yds_rush'] / numeric_data['att_rush']
-rate_features['td_rush_ratio'] = numeric_data['td_rush'] / (numeric_data['td_rush'] + numeric_data['td_pass'])
-
-# Add a few more useful features
-rate_features['yards_per_pass_attempt'] = numeric_data['yds_pass'] / numeric_data['att_pass']
-rate_features['sack_rate'] = numeric_data['sk'] / numeric_data['att_pass']
-rate_features['completion_pct'] = numeric_data['cmp'] / numeric_data['att_pass']
-rate_features['qbr'] = numeric_data['qbr']  Already a rate/score
-rate_features['passer_rating'] = numeric_data['rate']  # Already a rate
-
-# Standardize the features
-from sklearn.preprocessing import StandardScaler
-scaler = StandardScaler()
-X_scaled = scaler.fit_transform(rate_features)
-
-# Cluster DIRECTLY on scaled features (no PCA needed with rates)
-inertias = []
-sil_scores = []
-K_range = range(2, 11)
-
-for k in K_range:
-    km = KMeans(n_clusters=k, random_state=42, n_init=10)
-    labels = km.fit_predict(X_scaled)
-    inertias.append(km.inertia_)
-    sil_scores.append(silhouette_score(X_scaled, labels))
-
-# Elbow plot
-plt.figure(figsize=(8,5))
-plt.plot(K_range, inertias, marker='o')
-plt.xlabel("Number of clusters (k)")
-plt.ylabel("Inertia (within-cluster SSE)")
-plt.title("Elbow Method - Rate Features")
-plt.xticks(K_range)
-plt.show()
-
-# Silhouette plot
-plt.figure(figsize=(8,5))
-plt.plot(K_range, sil_scores, marker='o')
-plt.xlabel("Number of clusters (k)")
-plt.ylabel("Silhouette score")
-plt.title("Silhouette Score - Rate Features")
-plt.xticks(K_range)
-plt.show()
-
-print("Silhouette scores:", list(zip(K_range, sil_scores)))
-``` -->
-
-<!-- ```{python}
-# Drop the single row with NaN
-rate_features_clean = rate_features.dropna()
-
-print(f"Rows remaining: {len(rate_features_clean)} out of {len(rate_features)}")
-
-# Standardize and cluster
-from sklearn.preprocessing import StandardScaler
-from sklearn.metrics import silhouette_score
-
-scaler = StandardScaler()
-X_scaled = scaler.fit_transform(rate_features_clean)
-
-# Cluster directly on scaled features
-inertias = []
-sil_scores = []
-K_range = range(2, 11)
-
-for k in K_range:
-    km = KMeans(n_clusters=k, random_state=42, n_init=10)
-    labels = km.fit_predict(X_scaled)
-    inertias.append(km.inertia_)
-    sil_scores.append(silhouette_score(X_scaled, labels))
-
-# Elbow plot
-plt.figure(figsize=(8,5))
-plt.plot(K_range, inertias, marker='o')
-plt.xlabel("Number of clusters (k)")
-plt.ylabel("Inertia (within-cluster SSE)")
-plt.title("Elbow Method - Rate Features")
-plt.xticks(K_range)
-plt.show()
-
-# Silhouette plot
-plt.figure(figsize=(8,5))
-plt.plot(K_range, sil_scores, marker='o')
-plt.xlabel("Number of clusters (k)")
-plt.ylabel("Silhouette score")
-plt.title("Silhouette Score - Rate Features")
-plt.xticks(K_range)
-plt.show()
-
-print("Silhouette scores:", list(zip(K_range, sil_scores)))
-``` -->
-
-```{python}
-
-```
-
-```{python}
-# try_data = numeric_data['rush_attempt_pct'], numeric_data['td_per_attempt_pass'], numeric_data['int_per_attempt'], numeric_data['yards_per_rush'], numeric_data['td_rush_ratio'], numeric_data['']
-```
 
 
 ```{python}
-# X_scaled_try = scaler.fit_transform(try_data)
-
-# X_clustered_try = X_scaled_try[:, :10]
-
-# inertias = []
 K_range = range(2, 11)
-
-# for k in K_range:
-#     km = KMeans(n_clusters=k, random_state=42, n_init=10)
-#     km.fit(X_clustered_try)
-#     inertias.append(km.inertia_)
-
-# plt.figure(figsize=(8,5))
-# plt.plot(K_range, inertias, marker='o')
-# plt.xlabel("Number of clusters (k)")
-# plt.ylabel("Inertia (within-cluster SSE)")
-# plt.title("Elbow Method")
-# plt.xticks(K_range)
-# plt.show()
 ```
 
 
@@ -512,7 +379,7 @@ PCA scatterplot
 from matplotlib.colors import ListedColormap
 from matplotlib.patches import Patch
 
-# Match your poster: 0=Pocket Passer, 1=Game Manager, 2=Gunslinger, 3=Dual Threat
+# Match poster colors: 0=Pocket Passer, 1=Game Manager, 2=Gunslinger, 3=Dual Threat
 archetype_colors = ['#1F4E96', '#E67E22', '#27AE60', '#C0392B']
 cmap = ListedColormap(archetype_colors)
 
@@ -530,7 +397,6 @@ plt.xlabel(f'PC1 ({pca.explained_variance_ratio_[0]:.1%} variance)', fontsize=12
 plt.ylabel(f'PC2 ({pca.explained_variance_ratio_[1]:.1%} variance)', fontsize=12)
 plt.title('Quarterback Clusters in PCA Space', fontsize=14)
 
-# Manual legend so colors are guaranteed correct
 legend_labels = ['Pocket Passer', 'Game Manager', 'Gunslinger', 'Dual Threat']
 legend_handles = [Patch(facecolor=c, edgecolor='black', label=l)
                   for c, l in zip(archetype_colors, legend_labels)]
@@ -555,14 +421,14 @@ fig, axes = plt.subplots(2, 2, figsize=(14, 14), subplot_kw=dict(projection='pol
 axes = axes.flatten()
 
 angles = [n / len(metrics) * 2 * pi for n in range(len(metrics))]
-angles += angles[:1]  # Complete the circle
+angles += angles[:1]  
 
 archetype_names = ['Pocket Passer', 'Game Manager', 'Gunslinger', 'Dual Threat']
 colors = ['#1f77b4', '#ff7f0e', '#2ca02c', '#d62728']
 
 for idx, (cluster_id, ax) in enumerate(zip(range(4), axes)):
     values = cluster_normalized.iloc[cluster_id].tolist()
-    values += values[:1]  # Complete the circle
+    values += values[:1] 
     
     ax.plot(angles, values, 'o-', linewidth=2, color=colors[idx], label=archetype_names[idx])
     ax.fill(angles, values, alpha=0.25, color=colors[idx])
@@ -637,7 +503,6 @@ for metric in test_metrics:
         'Significant': 'Yes' if p_value < 0.05 else 'No'
     })
 
-# Create results dataframe
 anova_df = pd.DataFrame(anova_results)
 print("ANOVA Results:")
 print(anova_df.to_string(index=False))
@@ -654,16 +519,14 @@ significant_metrics = anova_df[anova_df['Significant'] == 'Yes']['Metric'].tolis
 print("\n=== POST-HOC TUKEY HSD TESTS ===")
 print("(Only for metrics with significant ANOVA)\n")
 
-for metric in significant_metrics[:3]:  # Show first 3 as example
+for metric in significant_metrics[:3]:  
     print(f"\n{metric.upper()}:")
     
-    # Get data for each group
     pocket = data[data['archetype'] == 'Pocket passer'][metric].dropna()
     manager = data[data['archetype'] == 'Game manager'][metric].dropna()
     gunslinger = data[data['archetype'] == 'Gunslinger'][metric].dropna()
     dual = data[data['archetype'] == 'Dual threat'][metric].dropna()
     
-    # Run Tukey HSD
     res = tukey_hsd(pocket, manager, gunslinger, dual)
     
     # Create pairwise comparison labels
