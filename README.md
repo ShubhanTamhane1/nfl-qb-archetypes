@@ -17,7 +17,7 @@ K-means clustering (k=4) applied to 204 QB-seasons (2019–2024) identified four
 | **Gunslinger** | High attempts, high interceptions | Herbert, Heinicke, Howell | 47 |
 | **Dual Threat** | Elite rushing + solid passing | L. Jackson, Murray, Allen | 25 |
 
-All 10 one-way ANOVA tests were significant at p < 0.001. The most notable result: **Pocket Passers and Dual Threats show no significant difference in QBR** (p = 0.9439), meaning elite efficiency is achievable through fundamentally different styles.
+All 10 one-way ANOVA tests were significant at p < 0.001. The most notable result: Pocket Passers and Dual Threats show no significant difference in QBR (p = 0.9439), meaning elite efficiency is achievable through fundamentally different styles.
 
 
 ---
@@ -84,8 +84,8 @@ Run cells top to bottom. The notebook covers:
 ## Future Work
 
 - **Temporal tracking** of archetype changes within individual QB careers
-- **Predictive modeling** — do archetypes predict playoff success, contract value, or career longevity?
-- **Richer features** — incorporate Next Gen Stats (air yards, time-to-throw, CPOE) and EPA-based metrics
+- **Predictive modeling** : do archetypes predict playoff success, contract value, or career longevity?
+- **Richer features** : incorporate Next Gen Stats (air yards, time-to-throw, CPOE) and EPA-based metrics
 
 ---
 
