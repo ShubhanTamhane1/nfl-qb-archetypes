@@ -12,10 +12,10 @@ K-means clustering (k=4) applied to 204 QB-seasons (2019–2024) identified four
 
 | Archetype | Defining Trait | Example QBs | n |
 |---|---|---|---|
-| 🔵 **Pocket Passer** | High passing volume, elite efficiency | Mahomes, Burrow, Brady | 85 |
-| 🟠 **Game Manager** | Low volume, conservative, limited stats | Mac Jones, Devlin Hodges | 48 |
-| 🟢 **Gunslinger** | High attempts, high interceptions | Herbert, Heinicke, Howell | 47 |
-| 🔴 **Dual Threat** | Elite rushing + solid passing | L. Jackson, Murray, Allen | 25 |
+| **Pocket Passer** | High passing volume, elite efficiency | Mahomes, Burrow, Brady | 85 |
+| **Game Manager** | Low volume, conservative, limited stats | Mac Jones, Devlin Hodges | 48 |
+| **Gunslinger** | High attempts, high interceptions | Herbert, Heinicke, Howell | 47 |
+| **Dual Threat** | Elite rushing + solid passing | L. Jackson, Murray, Allen | 25 |
 
 All 10 one-way ANOVA tests were significant at p < 0.001. The most notable result: **Pocket Passers and Dual Threats show no significant difference in QBR** (p = 0.9439), meaning elite efficiency is achievable through fundamentally different styles.
 
