@@ -1,0 +1,14 @@
+---
+title: "Identifying NFL Quarterback Archetypes via K-Means Clustering"
+format:
+  poster-typst:
+    size: "48x36"
+    poster-authors: "Shubhan Tamhane"
+    departments: "Department of Statistics, University of Connecticut"
+    institution-logo: ""          # path to UConn logo if you have one
+    footer-text: "Spring 2026"
+    footer-url: "github.com/ShubhanTamhane1/nfl-qb-archetypes"
+    footer-emails: ""
+    footer-color: "1A1F3C"       # your dark navy
+    num-columns: 3
+---
