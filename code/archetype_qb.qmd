@@ -299,9 +299,116 @@ plt.xlabel("Number of Principal Components")
 plt.ylabel("Cumulative Explained Variance")
 plt.title("PCA Explained Variance")
 plt.show()
-
 ```
 
+```{python}
+feature_names = numeric_data.columns.to_list()
+
+loadings = pd.DataFrame(
+    pca.components_.T,
+    index=feature_names,
+    columns=[f"PC{i+1}" for i in range(pca.n_components_)]
+)
+```
+
+
+
+Importance across all 10 PCs combines. Which features carry the most total information across all 10 PCs combined? 
+```{python}
+feature_importance_df = pd.DataFrame(
+    (np.abs(pca.components_[:10]).T @ pca.explained_variance_ratio_[:10]).round(4),
+    index=feature_names,
+    columns=["Weighted Importance"]
+).sort_values("Weighted Importance", ascending=False)
+
+print(feature_importance_df)
+```
+
+
+Segmented by PCs
+```{python}
+for pc in loadings.columns[:10]:
+    print(f"\nTop variables for {pc}")
+    print(loadings[pc].abs().sort_values(ascending=False).head(5).to_frame("Absolute Loading").round(4))
+```
+
+```{python}
+# Loading matrix
+loading_matrix = pd.DataFrame(
+    pca.components_[:10].T,
+    index=numeric_data.columns,
+    columns=[f'PC{i+1}' for i in range(10)]
+)
+
+print(loading_matrix.round(3))
+```
+
+```{python}
+plt.figure(figsize=(14, 10))
+sns.heatmap(
+    loading_matrix,
+    annot=True,
+    fmt=".2f",
+    cmap='coolwarm',
+    center=0,
+    annot_kws={"size": 7},
+    linewidths=0.5
+)
+plt.title("PCA Loading Matrix (Top 10 PCs)", fontsize=14)
+plt.xlabel("Principal Component")
+plt.ylabel("Feature")
+plt.tight_layout()
+plt.show()
+```
+
+```{python}
+eigenvalues = pca.explained_variance_[:10]
+var_ratio = pca.explained_variance_ratio_[:10]
+pc_labels = [f'PC{i+1}' for i in range(10)]
+
+fig, ax1 = plt.subplots(figsize=(10, 5))
+
+ax1.bar(pc_labels, var_ratio, color='steelblue', alpha=0.7, label='% Variance Explained')
+ax1.set_ylabel('Proportion of Variance Explained', color='steelblue')
+ax1.set_ylim(0, max(var_ratio) * 1.3)
+
+ax2 = ax1.twinx()
+ax2.plot(pc_labels, eigenvalues, color='red', marker='o', linewidth=2, label='Eigenvalue')
+ax2.axhline(y=1, color='red', linestyle='--', alpha=0.5, label='Eigenvalue = 1 (Kaiser)')
+ax2.set_ylabel('Eigenvalue', color='red')
+
+lines1, labels1 = ax1.get_legend_handles_labels()
+lines2, labels2 = ax2.get_legend_handles_labels()
+ax1.legend(lines1 + lines2, labels1 + labels2, loc='upper right')
+
+plt.title('Scree Plot — Top 10 Principal Components')
+plt.tight_layout()
+plt.show()
+```
+
+
+
+
+Leakage
+```{python}
+# Work on just the loading columns, not the whole df
+pc_cols = [f'PC{i+1}' for i in range(10)]
+loadings_only = loading_matrix[pc_cols]
+
+dominant_PC = loadings_only.abs().idxmax(axis=1)
+max_loading = loadings_only.abs().max(axis=1)
+second_max = loadings_only.abs().apply(lambda x: x.nlargest(2).iloc[1], axis=1)
+leakage_ratio = second_max / max_loading
+
+leakage_df = pd.DataFrame({
+    'dominant_PC': dominant_PC,
+    'max_loading': max_loading.round(3),
+    'second_max': second_max.round(3),
+    'leakage_ratio': leakage_ratio.round(3)
+}).sort_values('leakage_ratio', ascending=False)
+
+print(leakage_df)
+```
 
 ```{python}
 #| echo: false
@@ -354,6 +461,23 @@ cluster_summary = data.groupby("cluster").mean(numeric_only=True)
 cluster_summary[["att_pass", "yds_pass", "td_pass", "int", "rate", 
                  "qbr", "att_rush", "yds_rush", "td_rush", "sk"]]
 
+```
+
+```{python}
+# Cluster centroids are in PC space (shape: 4 clusters x 10 PCs)
+centroids = kmeans_4.cluster_centers_  
+
+centroid_variance = centroids.var(axis=0)  # variance across 4 clusters, per PC
+
+separation_df = pd.DataFrame({
+    'PC': pc_labels,
+    'Eigenvalue': eigenvalues.round(3),
+    'Variance Explained (%)': (var_ratio * 100).round(2),
+    'Centroid Spread (Cluster Separation)': centroid_variance.round(4)
+}).sort_values('Centroid Spread (Cluster Separation)', ascending=False)
+
+separation_df['Separation Rank'] = range(1, 11)
+print(separation_df.to_string(index=False))
 ```
 
 ```{python}
