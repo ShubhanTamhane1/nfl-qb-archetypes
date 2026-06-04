@@ -410,6 +410,24 @@ leakage_df = pd.DataFrame({
 print(leakage_df)
 ```
 
+Checking variance accounted for 9 vs. 10 PCS
+
+```{python}
+pca10 = PCA(n_components=10)
+pca10_scaled = pca10.fit_transform(X_scaled)
+
+pca9 = PCA(n_components=9)
+pca9_scaled = pca9.fit_transform(X_scaled)
+
+var_10 = pca10.explained_variance_ratio_.sum()
+var_9  = pca9.explained_variance_ratio_.sum()
+
+print(f"Variance explained (10 PCs): {var_10:.4f} ({var_10*100:.2f}%)")
+print(f"Variance explained  (9 PCs): {var_9:.4f}  ({var_9*100:.2f}%)")
+print(f"Variance lost by dropping PC10: {(var_10 - var_9)*100:.2f}%")
+
+```
+
 ```{python}
 #| echo: false
 X_clustered = X_pca[:, :10]
@@ -443,6 +461,23 @@ plt.show()
 list(zip(K_range, sil_scores))
 
 ```
+
+```{python}
+pca10 = PCA(n_components=10)
+X_10 = pca10.fit_transform(X_scaled)
+
+pca9 = PCA(n_components=9)
+X_9 = pca9.fit_transform(X_scaled)
+
+for k in K_range:
+    km = KMeans(n_clusters=k, random_state=42, n_init=10)
+    
+    sil_9  = silhouette_score(X_9,  km.fit_predict(X_9))
+    sil_10 = silhouette_score(X_10, km.fit_predict(X_10))
+    
+    print(f"k={k} | 9 PCs: {sil_9:.4f} | 10 PCs: {sil_10:.4f} | diff: {sil_10 - sil_9:+.4f}")
+```
+
 
 ```{python}
 #| echo: true
