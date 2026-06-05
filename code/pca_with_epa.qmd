@@ -1,0 +1,149 @@
+```{python}
+import pandas as pd
+from sklearn.preprocessing import StandardScaler
+import matplotlib.pyplot as plt
+import seaborn as sns 
+```
+
+```{python}
+data = pd.read_csv("/Users/shubhantamhane/nfl-qb-archetypes/code/data_with_epa.csv")
+```
+
+Imputation from code before
+```{python}
+data['lng_rush'] = data['lng_rush'].fillna(data['lng_rush'].mean())
+data['qbr'] = data['qbr'].fillna(data['qbr'].mean())
+```
+
+Scaling and other preprocessing 
+```{python}
+scaler = StandardScaler()
+
+numeric_data = data.select_dtypes(include=['float64', 'int64'])
+
+numeric_data = numeric_data.drop(columns=['year'])
+X_scaled = scaler.fit_transform(numeric_data)
+```
+
+Importing PCA
+```{python}
+from sklearn.decomposition import PCA
+
+pca = PCA(n_components=None)
+X_pca = pca.fit_transform(X_scaled)
+```
+
+Scree plot. Seems to be about 12 PCS fro 90% of variance
+```{python}
+plt.figure(figsize=(10,6))
+plt.plot(range(1, len(pca.explained_variance_ratio_)+1),
+         pca.explained_variance_ratio_.cumsum(),
+         marker='o')
+plt.axhline(y=0.9, color='r', linestyle='--')
+plt.xlabel("Number of Principal Components")
+plt.ylabel("Cumulative Explained Variance")
+plt.title("PCA Explained Variance")
+plt.show()
+```
+
+13 PCs for 90% of variance 
+```{python}
+pca = PCA(n_components=0.9)
+pca.fit(X_scaled)
+print(pca.n_components_)
+```
+
+
+Code to create loading matrix. Asks the question: Which features are most prevalent in determining principal components? 
+```{python}
+loading_matrix = pd.DataFrame(
+    pca.components_.T,
+    index=numeric_data.columns,
+    columns=[f'PC{i+1}' for i in range(pca.n_components_)]
+)
+
+print(loading_matrix.round(3))
+```
+
+Heatmap for easier visualization
+```{python}
+plt.figure(figsize=(14, 10))
+sns.heatmap(
+    loading_matrix,
+    annot=True,
+    fmt=".2f",
+    cmap='coolwarm',
+    center=0,
+    annot_kws={"size": 7},
+    linewidths=0.5
+)
+plt.title("PCA Loading Matrix", fontsize=14)
+plt.xlabel("Principal Component")
+plt.ylabel("Feature")
+plt.tight_layout()
+plt.show()
+```
+
+Scree plot for eigenvalues and proportion of variance explained by PC. 
+```{python}
+eigenvalues = pca.explained_variance_[:13]
+var_ratio = pca.explained_variance_ratio_[:13]
+pc_labels = [f'PC{i+1}' for i in range(13)]
+
+fig, ax1 = plt.subplots(figsize=(10, 5))
+
+ax1.bar(pc_labels, var_ratio, color='steelblue', alpha=0.7, label='% Variance Explained')
+ax1.set_ylabel('Proportion of Variance Explained', color='steelblue')
+ax1.set_ylim(0, max(var_ratio) * 1.3)
+
+ax2 = ax1.twinx()
+ax2.plot(pc_labels, eigenvalues, color='red', marker='o', linewidth=2, label='Eigenvalue')
+ax2.axhline(y=1, color='red', linestyle='--', alpha=0.5, label='Eigenvalue = 1 (Kaiser)')
+ax2.set_ylabel('Eigenvalue', color='red')
+
+lines1, labels1 = ax1.get_legend_handles_labels()
+lines2, labels2 = ax2.get_legend_handles_labels()
+ax1.legend(lines1 + lines2, labels1 + labels2, loc='upper right')
+
+plt.title('Scree Plot —  Principal Components')
+plt.tight_layout()
+plt.show()
+```
+
+```{python}
+pc_summary = pd.DataFrame({
+    'PC': [f'PC{i+1}' for i in range(pca.n_components_)],
+    'Eigenvalue': pca.explained_variance_.round(3),
+    'Variance Explained (%)': (pca.explained_variance_ratio_ * 100).round(2)
+})
+
+print(pc_summary.to_string(index=False))
+```
+
+```{python}
+X_clustered = X_pca
+
+from sklearn.cluster import KMeans
+
+from sklearn.metrics import silhouette_score
+
+K_range = range(2,11)
+
+sil_scores = []
+
+for k in K_range:
+    km = KMeans(n_clusters=k, random_state=42, n_init=10)
+    labels = km.fit_predict(X_clustered)
+    score = silhouette_score(X_clustered, labels)
+    sil_scores.append(score)
+
+plt.figure(figsize=(8,5))
+plt.plot(K_range, sil_scores, marker='o')
+plt.xlabel("Number of clusters (k)")
+plt.ylabel("Silhouette score")
+plt.title("Silhouette Score vs k")
+plt.xticks(K_range)
+plt.show()
+
+list(zip(K_range, sil_scores))
+```
